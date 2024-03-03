@@ -34,8 +34,8 @@ def handle_excel_xlsx(excel_file_path):
     product_names = []
     for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
         values = [row[i - 1] for i in column_indices]
-        if values[1] != None or values[1] != '':
-            product_names.append(values[1])
+        if values[1] is not None and values[1] != '':
+            product_names.append(values[1].lower().strip())
         print("Row {}: Cell values: {}".format(row_index, values))
     
     # Close the workbook
@@ -48,17 +48,20 @@ def get_strings_with_same_word_count(product_stocks, product_name):
     for product_stock in product_stocks:
         if product_stock != None:
             count_equal_elements = compare_strings_count_equal_elements(product_stock, product_name)
-            # Count word equal True
-            if count_equal_elements > 5:
+            if count_equal_elements:
                 found_product_names.append({"is_found": True, "product_name": product_name, "product_stock_name": product_stock})
             else:
                 found_product_names.append({"is_found": False, "product_name": product_name, "product_stock_name": product_stock})
     return found_product_names
 
 def compare_strings_count_equal_elements(product_stock_name, product_name):
-    words1 = set(product_stock_name.lower().split())
-    words2 = set(product_name.lower().split())
-    return sum(1 for elem1 in words1 if elem1 in words2)
+    words1 = set(product_stock_name.lower().strip().split())
+    words2 = set(product_name.lower().strip().split())
+    count_equal_elements = sum(1 for elem1 in words1 if elem1 in words2)
+    # Count word equal True
+    if count_equal_elements >= 4:
+        return True
+    return False
 
 
 def remove_files_folder(folder_path): 
@@ -79,19 +82,19 @@ def filter_products(data_stocks, data_products):
     products = []
     product_stock_names = []
     for product in data_products:
-        founds = get_strings_with_same_word_count(data_stocks, product['product_name'])
+        founds = get_strings_with_same_word_count(data_stocks, product['product_name'].lower().strip())
         for found in founds:
             if found['is_found'] == True and product['ending_inventory'] < 10:
                 products.append({
                     'product_code': product['product_code'], 
-                    'product_name': product['product_name'],
+                    'product_name': product['product_name'].lower().strip(),
                     'ending_inventory': product['ending_inventory'],
                     'need_to_get': 10,
                 })
                 product_stock_names.append({
                     'product_code': product['product_code'], 
-                    'product_name': product['product_name'], 
-                    'product_stock_name': found['product_stock_name'], 
+                    'product_name': product['product_name'].lower().strip(), 
+                    'product_stock_name': found['product_stock_name'].lower().strip(), 
                     'ending_inventory': product['ending_inventory'],
                     'need_to_get': 10,
                 })
