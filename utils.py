@@ -34,7 +34,7 @@ def handle_excel_xlsx(excel_file_path):
     product_names = []
     for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
         values = [row[i - 1] for i in column_indices]
-        if values[1] is not None and values[1] != '':
+        if values[1] is not None and values[1] != '' and values[1] != '越南型号':
             product_names.append(values[1].lower().strip())
         print("Row {}: Cell values: {}".format(row_index, values))
     
