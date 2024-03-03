@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Crawler</title>
+</head>
+<body>
+    <h1>Website Crawler</h1>
+    <form method="post">
+        <label for="url">Enter URL:</label>
+        <input type="text" name="url" required>
+        <br>
+        <label for="text_key">Enter Text Key:</label>
+        <input type="text" name="text_key" required>
+        <br>
+        <button type="submit">Crawl</button>
+    </form>
+
+    {% if results %}
+        <h2>Results:</h2>
+        <ul>
+            {% for result in results %}
+                <li>{{ result }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>
