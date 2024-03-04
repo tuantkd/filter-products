@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
 import secrets
-from utils import filter_products, handle_excel_xls, handle_excel_xlsx, remove_files_folder, save_file_new
+from utils import filter_product_stocks, filter_products, handle_excel_xls, handle_excel_xlsx, remove_files_folder, save_file_new
 
 app = Flask(__name__)
 

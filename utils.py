@@ -54,14 +54,19 @@ def get_strings_with_same_word_count(product_stocks, product_name):
                 found_product_names.append({"is_found": False, "product_name": product_name, "product_stock_name": product_stock})
     return found_product_names
 
-def compare_strings_count_equal_elements(product_stock_name, product_name):
+
+def compare_strings_count_equal_elements(product_name, product_stock_name):
     words1 = set(product_stock_name.lower().strip().split())
     words2 = set(product_name.lower().strip().split())
     count_equal_elements = sum(1 for elem1 in words1 if elem1 in words2)
+    
     # Count word equal True
-    if count_equal_elements >= 4:
+    if product_name.lower().strip() in product_stock_name.lower().strip():
         return True
-    return False
+    elif count_equal_elements >= 4:
+        return True
+    else:
+        return False
 
 
 def remove_files_folder(folder_path): 
@@ -106,6 +111,45 @@ def filter_products(data_stocks, data_products):
         "product_stock_names": product_stock_names, 
         "data_stocks": list(dict.fromkeys(data_stocks))
     }
+    
+
+def filter_product_stocks(data_stocks, data_products):
+    products = []
+    product_stock_names = []
+    for pro_stock_name in data_stocks:
+        found_products = get_product_compare(data_products, pro_stock_name.lower().strip())
+        product_stock_names.extend(found_products)
+        for found_product in found_products:
+            products.append({
+                'product_code': found_product['product_code'], 
+                'product_name': found_product['product_name'].lower().strip(),
+                'ending_inventory': found_product['ending_inventory'],
+                'need_to_get': found_product['need_to_get'],
+            })
+            
+    product_filters = remove_duplicates(products)
+    product_stock_names = remove_duplicates(product_stock_names)
+    return {
+        "product_filters": product_filters, 
+        "product_stock_names": product_stock_names, 
+        "data_stocks": list(dict.fromkeys(data_stocks))
+    }
+
+
+def get_product_compare(data_products, product_stock_name):
+    found_products = []
+    for product in data_products:
+        if product != None:
+            is_compare_equal = compare_strings_count_equal_elements(product['product_name'], product_stock_name)
+            if is_compare_equal and product['ending_inventory'] < 10:
+                found_products.append({
+                    'product_code': product['product_code'], 
+                    'product_name': product['product_name'].lower().strip(), 
+                    'product_stock_name': product_stock_name.lower().strip(), 
+                    'ending_inventory': product['ending_inventory'],
+                    'need_to_get': 10,
+                })
+    return found_products
 
 
 def remove_duplicates(data_list):
