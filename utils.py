@@ -1,7 +1,27 @@
 import os
-import pandas as pd
 import xlrd
 import openpyxl
+
+def levenshtein_distance(s1, s2):
+    m, n = len(s1), len(s2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    # Initialize first row and column
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+    
+    # Fill the matrix
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = 0 if s1[i - 1] == s2[j - 1] else 1
+            dp[i][j] = min(dp[i - 1][j] + 1,      # deletion
+                           dp[i][j - 1] + 1,      # insertion
+                           dp[i - 1][j - 1] + cost)  # substitution
+    
+    # The bottom-right cell contains the Levenshtein distance
+    return dp[m][n]
 
 def handle_excel_xls(file_path):
     workbook = xlrd.open_workbook(file_path)
@@ -44,6 +64,10 @@ def handle_excel_xlsx(excel_file_path):
 
 
 def get_strings_with_same_word_count(product_stocks, product_name):
+    distance = levenshtein_distance(product_stocks, product_name)
+    if distance > 0:
+        print(distance)
+    
     found_product_names = []
     for product_stock in product_stocks:
         if product_stock != None:
@@ -59,11 +83,8 @@ def compare_strings_count_equal_elements(product_name, product_stock_name):
     words1 = set(product_stock_name.lower().strip().split())
     words2 = set(product_name.lower().strip().split())
     count_equal_elements = sum(1 for elem1 in words1 if elem1 in words2)
-    
     # Count word equal True
-    if product_name.lower().strip() in product_stock_name.lower().strip():
-        return True
-    elif count_equal_elements >= 4:
+    if count_equal_elements >= 4:
         return True
     else:
         return False

@@ -1,10 +1,16 @@
-from flask import Flask, render_template, request, flash, send_file
+from flask import Flask, render_template, request, flash
 import os
+import time
 import requests
 from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
 import secrets
-from utils import filter_product_stocks, filter_products, handle_excel_xls, handle_excel_xlsx, remove_files_folder, save_file_new
+from utils import filter_products, handle_excel_xls, handle_excel_xlsx, remove_files_folder, save_file_new
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 
 app = Flask(__name__)
 
@@ -62,12 +68,54 @@ def crawl_website(url, parent_class):
         return str(e)
 
 
-@app.route('/crawl', methods=['GET', 'POST'])
-def crawl():
-    url = "https://xiaomicantho.vn/san-pham/page/1/"
-    text_key = "content_site"
-    results = crawl_website(url, text_key)
-    return render_template('index.html', results=results, url=url, text_key=text_key)
+@app.route('/auto-like')
+def home():
+    return render_template('autolike.html')
+
+@app.route('/auto', methods=['GET', 'POST'])
+def auto():
+    # Replace 'your_email' and 'your_password' with your Facebook credentials
+    username = "nguyenvantuan9a7@gmail.com"
+    password = "LSqKdf&E"
+
+    # Set up WebDriver
+    chrome_options = Options()
+    chrome_options.add_argument("--disable-notifications")
+    service = Service('chromedriver.exe')  # Replace with the path to your WebDriver
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.maximize_window()
+
+    # Open Facebook
+    driver.get("https://www.facebook.com")
+
+    # Log in
+    time.sleep(2)  # Wait for the page to load
+    email_element = driver.find_element(By.ID, "email")
+    email_element.send_keys(username)
+    password_element = driver.find_element(By.ID, "pass")
+    password_element.send_keys(password)
+    password_element.send_keys(Keys.RETURN)
+
+    # Wait for login to complete
+    time.sleep(5)
+
+    # Scroll and like posts
+    for _ in range(10):  # Adjust the range for the number of scrolls/likes
+        like_buttons = driver.find_elements(By.XPATH, "//div[@aria-label='Thích']")
+        for button in like_buttons:
+            try:
+                button.click()
+                time.sleep(2)  # Wait a bit between likes to mimic human behavior
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+        # Scroll down
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(5)  # Wait for new posts to load
+
+    # Close the browser
+    driver.quit()
 
 
 @app.route('/upload', methods=['POST'])
