@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="shortcut icon" href="{{ url_for('static', filename='icons/filter-flat.png') }}">
     <title>Auto Liked FaceBook</title>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
     <!-- jQuery library -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
@@ -16,6 +16,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
   </head>
   <body>
     <div class="loading-state" style="display:none;" id="loading-state">
@@ -31,37 +32,43 @@
               <h3 class="mb-0">Auto Liked FaceBook</h3>
             </div>
             <div class="card-body">
-
-              {% with messages = get_flashed_messages() %} 
-                {% if messages %} 
-                  {% for message in messages %}
-                    <div class="error">{{ message }}</div>
-                  {% endfor %} 
-                {% endif %} 
-              {% endwith %}
-
-              <form autocomplete="off" class="form" id="formFilter" name="formFilter" action="/autolike" method="post">
-                <div class="form-group">
-                  <label for="username"><b>Tài khoản FaceBook</b></label>
-                  <input type="text" class="form-control" placeholder="Nhập tên tài khoản" id="username" name="username">
+              <div class="error" id="error-response"></div>
+              <form autocomplete="off" class="form" id="formFilter" name="formFilter">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="username"><b>Tài khoản FaceBook</b></label>
+                      <input type="text" class="form-control" placeholder="Nhập tên tài khoản" id="username" name="username">
+                      <span id="username-error" class="error-message"></span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="password"><b>Mật khẩu FaceBook</b></label>
+                      <input type="password" class="form-control" placeholder="Nhập mật khẩu" id="password" name="password">
+                      <span id="password-error" class="error-message"></span>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="password"><b>Mật khẩu FaceBook</b></label>
-                  <input type="password" class="form-control" placeholder="Nhập mật khẩu" id="password" name="password">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="posts"><b>Số lượng bài viết cần Liked</b></label>
+                      <input type="number" class="form-control" placeholder="Nhập số lượng bài viết" id="posts" name="posts">
+                      <span id="posts-error" class="error-message"></span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="minutes"><b>Thời gian số phút auto like</b></label>
+                      <input type="number" class="form-control" placeholder="Nhập số lượng bài viết" id="minutes" name="minutes">
+                      <span id="minutes-error" class="error-message"></span>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="posts"><b>Số lượng bài viết cần Liked</b></label>
-                  <input type="number" class="form-control" placeholder="Nhập số lượng bài viết" id="posts" name="posts">
-                </div>
-
-                <div class="form-group">
-                  <label for="minutes"><b>Thời gian số phút auto like</b></label>
-                  <input type="number" class="form-control" placeholder="Nhập số lượng bài viết" id="minutes" name="minutes">
-                </div>
-
-                <button class="btn btn-success btn-lg float-right" type="submit">Thực hiện</button>
+                <button class="btn btn-success btn-lg float-right" type="button" id="submitButton"></button>
               </form>
             </div>
             <!--/card-block-->
@@ -71,5 +78,93 @@
       </div>
     </div>
 
+    <script>
+      function validateForm() {
+        const name = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const posts = document.getElementById("posts").value;
+        const minutes = document.getElementById("minutes").value;
+        
+        const nameError = document.getElementById("username-error");
+        const passwordError = document.getElementById("password-error");
+        const postsError = document.getElementById("posts-error");
+        const minutesError = document.getElementById("minutes-error");
+    
+        nameError.textContent = "";
+        passwordError.textContent = "";
+        postsError.textContent = "";
+        minutesError.textContent = "";
+    
+        let isValid = true;
+    
+        if (name === "") {
+          nameError.textContent = "Chưa nhập tên tài khoản";
+          isValid = false;
+        }
+    
+        if (password === "" || password.length < 8) {
+          passwordError.textContent = "Nhập mật khẩu và không được ít hơn 8 ký tự";
+          isValid = false;
+        }
+
+        if (posts === "") {
+          postsError.textContent = "Nhập số lượng bài viết";
+          isValid = false;
+        }
+    
+        if (minutes === "") {
+          minutesError.textContent = "Nhập thời lượng like bài viết";
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      $(document).ready(function() {
+        var error = document.getElementById("error-response");
+        error.style.display = "none";
+        error.textContent = "";
+
+        var eleButton = document.getElementById("submitButton");
+        eleButton.innerHTML = "Chạy Auto";
+
+        $('#submitButton').on('click', function(event) {
+          if (validateForm() === false) {
+            return;
+          }
+          
+          eleButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Hệ thống đang chạy ...';
+          eleButton.disabled = true;
+
+          // Gather the form data
+          var formData = {
+            username: $('#username').val(),
+            password: $('#password').val(),
+            posts: $('#posts').val(),
+            minutes: $('#minutes').val(),
+          };
+
+          // Send the request via jQuery AJAX
+          $.ajax({
+            url: 'http://127.0.0.1:5000/autolike',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+              if (response) {
+                error.style.display = "block";
+                error.innerHTML = response.message;
+
+                eleButton.disabled = false;
+                eleButton.innerHTML = 'Chạy Auto';
+              }
+            },
+            error: function(xhr, status, error) {
+              console.log(`Error: ${xhr.statusText}`);
+            }
+          });
+        });
+      });
+  </script>
   </body>
 </html>

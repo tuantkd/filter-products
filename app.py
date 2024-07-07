@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash
+from flask import Flask, render_template, request, flash, jsonify
 import os
 import time
 import requests
@@ -25,7 +25,6 @@ app.secret_key = secrets.token_hex(16)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-
 def check_save_file(input_name):
     file = request.files[input_name]
     if file.filename == '':
@@ -35,7 +34,6 @@ def check_save_file(input_name):
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         return file_path
-
 
 def crawl_website(url, parent_class):
     try:
@@ -116,7 +114,7 @@ def scroll_like_posts(driver, posts_number, minutes):
         else:
             continue
 
-    
+
 @app.route('/auto-like')
 def autolike():
     return render_template('autolike.html')
@@ -124,11 +122,13 @@ def autolike():
 @app.route('/autolike', methods=['GET', 'POST'])
 def auto():
     if request.method == 'POST':
+        data = request.json
+        
         # Get data from form
-        username = request.form['username']
-        password = request.form['password']
-        posts_number = request.form['posts']
-        minutes = request.form['minutes']
+        username = data['username']
+        password = data['password']
+        posts_number = data['posts']
+        minutes = data['minutes']
 
         # Set up WebDriver
         chrome_options = Options()
@@ -139,8 +139,9 @@ def auto():
         login_facebook(username, password, driver)
         scroll_like_posts(driver, posts_number, minutes)
     
-    flash('Kết thúc quá trình Auto Liked Facebook', 'error')
-    return render_template('autolike.html')
+    # Create a response
+    response = {'message': 'Kết thúc quá trình Auto Liked Facebook'}
+    return jsonify(response)
 
 
 @app.route('/upload', methods=['POST'])
