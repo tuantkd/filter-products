@@ -2,15 +2,16 @@ from flask import Flask, render_template, request, flash
 import os
 import time
 import requests
+import secrets
 from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
-import secrets
 from utils import filter_products, handle_excel_xls, handle_excel_xlsx, remove_files_folder, save_file_new
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -67,28 +68,12 @@ def crawl_website(url, parent_class):
     except Exception as e:
         return str(e)
 
-
-@app.route('/auto-like')
-def home():
-    return render_template('autolike.html')
-
-@app.route('/auto', methods=['GET', 'POST'])
-def auto():
-    # Replace 'your_email' and 'your_password' with your Facebook credentials
-    username = "nguyenvantuan9a7@gmail.com"
-    password = "LSqKdf&E"
-
-    # Set up WebDriver
-    chrome_options = Options()
-    chrome_options.add_argument("--disable-notifications")
-    service = Service('chromedriver.exe')  # Replace with the path to your WebDriver
-
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+def login_facebook(username, password, driver):
     driver.maximize_window()
-
+    
     # Open Facebook
     driver.get("https://www.facebook.com")
-
+    
     # Log in
     time.sleep(2)  # Wait for the page to load
     email_element = driver.find_element(By.ID, "email")
@@ -98,24 +83,64 @@ def auto():
     password_element.send_keys(Keys.RETURN)
 
     # Wait for login to complete
-    time.sleep(5)
-
+    time.sleep(3)
+    
+def scroll_like_posts(driver, posts_number, minutes):
+    # Time end processing
+    current_time_plus = datetime.now() + timedelta(minutes = int(minutes))
+    current_time_plus_str = current_time_plus.strftime('%Y-%m-%d %H:%M')
+        
     # Scroll and like posts
-    for _ in range(10):  # Adjust the range for the number of scrolls/likes
+    for _ in range(int(posts_number)):  
+        # Adjust the range for the number of scrolls/likes
         like_buttons = driver.find_elements(By.XPATH, "//div[@aria-label='Thích']")
-        for button in like_buttons:
-            try:
-                button.click()
-                time.sleep(2)  # Wait a bit between likes to mimic human behavior
-            except Exception as e:
-                print(f"An error occurred: {e}")
+        for index, button in enumerate(like_buttons):
+            print(index, button)
+            if index <= 1:
+                try:
+                    button.click()
+                    time.sleep(2)  # Wait a bit between likes to mimic human behavior
+                except Exception as e:
+                    print(f"An error occurred: {e}")
 
         # Scroll down
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(5)  # Wait for new posts to load
+        time.sleep(3)  # Wait for new posts to load
+        
+        time_now = datetime.now().strftime('%Y-%m-%d %H:%M')
+        print(time_now, current_time_plus_str)
+        if time_now == current_time_plus_str:
+            # Close the browser
+            driver.quit()
+            break
+        else:
+            continue
 
-    # Close the browser
-    driver.quit()
+    
+@app.route('/auto-like')
+def autolike():
+    return render_template('autolike.html')
+
+@app.route('/autolike', methods=['GET', 'POST'])
+def auto():
+    if request.method == 'POST':
+        # Get data from form
+        username = request.form['username']
+        password = request.form['password']
+        posts_number = request.form['posts']
+        minutes = request.form['minutes']
+
+        # Set up WebDriver
+        chrome_options = Options()
+        chrome_options.add_argument("--disable-notifications")
+        service = Service('chromedriver.exe')  # Replace with the path to your WebDriver
+
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        login_facebook(username, password, driver)
+        scroll_like_posts(driver, posts_number, minutes)
+    
+    flash('Kết thúc quá trình Auto Liked Facebook', 'error')
+    return render_template('autolike.html')
 
 
 @app.route('/upload', methods=['POST'])
@@ -125,15 +150,14 @@ def upload():
     fileproduct_path = check_save_file('fileproduct')
     
     if filestock_path == None and fileproduct_path == None:
-        flash(f'Không tìm thấy file "Stock hàng về ..."', 'error')
-        flash(f'Không tìm thấy file "ProducInOutStockDetail"', 'error')
+        flash('Không tìm thấy file "Stock hàng về ..."', 'error')
+        flash('Không tìm thấy file "ProducInOutStockDetail"', 'error')
         return render_template('index.html')
     else: 
         data_stocks = handle_excel_xlsx(filestock_path)
         data_products = handle_excel_xls(fileproduct_path)
         product_filtered = filter_products(data_stocks, data_products)
         save_file_new(product_filtered['product_filters'])
-        
     return render_template('products.html', products=product_filtered)
 
 
