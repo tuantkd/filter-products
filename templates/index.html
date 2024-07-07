@@ -6,10 +6,7 @@
     <link rel="shortcut icon" href="{{ url_for('static', filename='icons/filter-flat.png') }}">
     <title>Filter</title>
 
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
     <!-- jQuery library -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
     <!-- Popper JS -->
@@ -17,10 +14,7 @@
     <!-- Latest compiled JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script>
       function toggleShow(id) {
@@ -32,6 +26,19 @@
     </script>
   </head>
   <body>
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+      <a class="navbar-brand" href="#">Tool</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="collapsibleNavbar">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="http://127.0.0.1:5000/auto-like">Auto like Facebook</a>
+          </li>
+        </ul>
+      </div>  
+    </nav>
     <div class="loading-state" style="display:none;" id="loading-state">
       <div class="loading"></div>
     </div>
@@ -45,23 +52,26 @@
               <h3 class="mb-0">Lọc sản phẩm tồn kho</h3>
             </div>
             <div class="card-body">
-              {% with messages = get_flashed_messages() %} {% if messages %} {%
-              for message in messages %}
-              <div class="error">{{ message }}</div>
-              {% endfor %} {% endif %} {% endwith %}
+
+              {% with messages = get_flashed_messages() %} 
+              {% if messages %} 
+                {% for message in messages %}
+                  <div class="error">{{ message }}</div>
+                {% endfor %} 
+              {% endif %} 
+              {% endwith %}
 
               <form
                 autocomplete="off"
                 class="form"
                 id="formFilter"
                 name="formFilter"
-                role="form"
                 action="/upload"
                 method="post"
                 enctype="multipart/form-data"
               >
                 <div class="form-group">
-                  <label><b>File excel Stock hàng về dd.mm.yyyy.xlsx</b></label>
+                  <label for=""><b>File excel Stock hàng về dd.mm.yyyy.xlsx</b></label>
                   <div class="input-group">
                     <label class="input-group-btn my-0">
                       <span
@@ -87,9 +97,7 @@
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>
-                    <b>File excel ProducInOutStockDetail.xls</b>
-                  </label>
+                  <label for=""><b>File excel ProducInOutStockDetail.xls</b></label>
                   <div class="input-group">
                     <label class="input-group-btn my-0">
                       <span

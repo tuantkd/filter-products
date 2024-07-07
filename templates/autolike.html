@@ -68,7 +68,8 @@
                   </div>
                 </div>
 
-                <button class="btn btn-success btn-lg float-right" type="button" id="submitButton"></button>
+                <button class="btn btn-success btn-lg float-right mr-2" type="button" id="submitButton"></button>
+                <button class="btn btn-info btn-lg float-right mr-2" type="button" onclick="refresh()">Làm mới</button>
               </form>
             </div>
             <!--/card-block-->
@@ -79,6 +80,11 @@
     </div>
 
     <script>
+      function refresh() {
+        localStorage.removeItem("autolike");
+        location.reload();
+      }
+
       function validateForm() {
         const name = document.getElementById("username").value;
         const password = document.getElementById("password").value;
@@ -128,6 +134,14 @@
         var eleButton = document.getElementById("submitButton");
         eleButton.innerHTML = "Chạy Auto";
 
+        var autolike = JSON.parse(localStorage.getItem("autolike"));
+        if (autolike) {
+          $('#username').val(autolike.username);
+          $('#password').val(autolike.password);
+          $('#posts').val(autolike.posts);
+          $('#minutes').val(autolike.minutes);
+        }
+
         $('#submitButton').on('click', function(event) {
           if (validateForm() === false) {
             return;
@@ -143,6 +157,7 @@
             posts: $('#posts').val(),
             minutes: $('#minutes').val(),
           };
+          localStorage.setItem("autolike", JSON.stringify(formData));
 
           // Send the request via jQuery AJAX
           $.ajax({
