@@ -3,11 +3,11 @@ import sys
 import time
 import pyautogui
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service as ChromeService
 
 # ================= CẬP NHẬT CHO MÁY BẠN =================
 # Đường dẫn tới file chromedriver.exe (hoặc chromedriver trên macOS/Linux)
@@ -83,13 +83,6 @@ def like_button(driver):
         browse_like_icon = driver.find_elements(
             By.CSS_SELECTOR, "span[data-e2e='browse-like-icon']"
         )  # browse-like-icon
-
-        # comment_like_icon = driver.find_elements(
-        #     By.CSS_SELECTOR, "div[data-e2e='comment-like-icon']"
-        # )  # comment-like-icon
-        # if comment_like_icon:
-        #     like_spans.extend(comment_like_icon)
-
         if not like_spans:
             like_spans = browse_like_icon
 
@@ -100,37 +93,108 @@ def like_button(driver):
                 parent_button = btn.find_element(By.XPATH, "./ancestor::button[1]")
                 parent_button.click()
                 print(f"  ✓ Đã click nút Thích thứ {idx}.")
-                time.sleep(0.5)  # đợi TikTok ghi nhận
+                time.sleep(1)  # đợi TikTok ghi nhận
             except Exception as e:
                 print(f"  ⚠ Lỗi khi click nút Thích thứ {idx}: {e}")
     except Exception as e:
         print(f"    ❌ Lỗi khi tìm/nhấn nút Like (Tym):", e)
 
 
-def next_button(driver, wait):
-    # ===========================
-    # Tìm tất cả nút "Chuyển tiếp video" rồi click từng cái
-    # ===========================
+def click_undefined_button(driver):
+    """
+    Tìm tất cả <span> có attribute data-e2e="undefined-icon", sau đó click vào nút <button> cha chứa nó.
+    """
     try:
-        wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "button.action-item"))
-        )
-        # Tìm tất cả các nút "Next" bằng cách locate <svg> có path giống chuyển video
-        next_buttons = driver.find_elements(
-            By.XPATH,
-            '//svg[path[@d="m24 27.76 13.17-13.17a1 1 0 0 1 1.42 0l2.82 2.82a1 1 0 0 1 0 1.42L25.06 35.18a1.5 1.5 0 0 1-2.12 0L6.59 18.83a1 1 0 0 1 0-1.42L9.4 14.6a1 1 0 0 1 1.42 0L24 27.76Z"]]',
-        )
-        print(f"🔍 Tìm thấy {len(next_buttons)} nút Chuyển tiếp video.")
-        for idx, btn in enumerate(next_buttons, start=1):
+        # XPath tìm tất cả span có data-e2e="undefined-icon"
+        span_elements = driver.find_elements(
+            By.CSS_SELECTOR, "span[data-e2e='undefined-icon']"
+        )  # undefined-icon
+        print(f"🔍 Tìm thấy {len(span_elements)} nút thêm vào mục yêu thích")
+
+        for idx, span in enumerate(span_elements, start=1):
             try:
-                # Click vào button đầu tiên trong danh sách (chuyển sang video kế)
-                btn.click()
-                print(f"  → Đã click nút Next thứ {idx}.")
-                time.sleep(1)  # đợi video mới load
+                # Lấy nút button cha gần nhất
+                button = span.find_element(By.XPATH, "./ancestor::button[1]")
+
+                # Scroll button vào giữa màn hình
+                driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", button
+                )
+                time.sleep(0.5)
+
+                # Click button
+                button.click()
+                print(f"  ✓ Đã click button thứ {idx} nút mục yêu thích")
+                time.sleep(1)
             except Exception as e:
-                print(f"  ⚠ Lỗi khi click nút Next thứ {idx}: {e}")
+                print(f"  ⚠ Lỗi khi click button thứ {idx}: {e}")
     except Exception as e:
-        print("    ❌ Lỗi khi tìm/nhấn nút Next (Chuyển video):", e)
+        print(f"  ⚠ Lỗi khi tìm nút thêm vào mục yêu thích")
+
+
+def click_all_follow_buttons(driver):
+    """
+    Tìm tất cả các nút Follow bên trong div có data-e2e="browse-follow"
+    rồi click từng nút.
+    """
+    # Tìm tất cả các div chứa nút Follow theo attribute data-e2e
+    try:
+        follow_wrappers = driver.find_elements(
+            By.CSS_SELECTOR, 'div[data-e2e="browse-follow"]'
+        )
+        print(f"🔍 Tìm thấy {len(follow_wrappers)} phần tử chứa nút Follow.")
+        for idx, wrapper in enumerate(follow_wrappers, start=1):
+            try:
+                # Tìm button con bên trong wrapper
+                follow_button = wrapper.find_element(By.TAG_NAME, "button")
+
+                # Scroll button vào giữa màn hình để đảm bảo click chính xác
+                driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", follow_button
+                )
+                time.sleep(0.5)
+
+                # Click nút Follow
+                follow_button.click()
+                print(f"  ✓ Đã click nút Follow thứ {idx}.")
+                time.sleep(1)  # Đợi trang xử lý click
+            except Exception as e:
+                print(f"  ⚠ Lỗi khi click nút Follow thứ {idx}: {e}")
+    except Exception as e:
+        print(f"  ⚠ Lỗi khi tìm nút theo dõi (Follow)")
+
+
+def click_all_comment_like_icons(driver):
+    """
+    Tìm tất cả các div có attribute data-e2e="comment-like-icon" rồi click từng cái.
+    """
+    try:
+        # Tìm tất cả phần tử div có data-e2e="comment-like-icon"
+        like_icons = driver.find_elements(
+            By.CSS_SELECTOR, 'div[data-e2e="comment-like-icon"]'
+        )
+        print(f"🔍 Tìm thấy {len(like_icons)} icon 'comment-like'.")
+
+        for idx, icon in enumerate(like_icons, start=1):
+            try:
+                # CLick đến nút thích bình luận thứ 8 thì dừng lại
+                if idx == 8:
+                    break
+
+                # Scroll icon vào giữa màn hình để chắc chắn nó hiển thị
+                driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", icon
+                )
+                time.sleep(0.5)  # Đợi animation scroll
+
+                # Click vào icon (div)
+                icon.click()
+                print(f"  ✓ Đã click icon 'comment-like' thứ {idx}.")
+                time.sleep(1)  # Đợi trang ghi nhận click
+            except Exception as e:
+                print(f"  ⚠ Lỗi khi click icon thứ {idx}: {e}")
+    except Exception as e:
+        print(f"  ⚠ Lỗi khi tìm nút thích bình luận")
 
 
 def press_arrow_down():
@@ -154,6 +218,72 @@ def press_arrow_down():
     # -------------------------------------
 
 
+def type_comment_with_pyautogui_and_post(driver, comment_text="Great video!"):
+    """
+    1. Tìm ô nhập comment (div contenteditable).
+    2. Click vào để focus, dùng pyautogui gõ comment_text.
+    3. Chờ nút Đăng chuyển từ aria-disabled="true" sang "false".
+    4. Click nút Đăng để gửi.
+    """
+    try:
+        # 1. Tìm ô nhập comment (contenteditable div)
+        editable_divs = driver.find_elements(
+            By.CSS_SELECTOR, 'div[contenteditable="true"][role="textbox"]'
+        )
+        if not editable_divs:
+            print("❌ Không tìm thấy ô nhập comment.")
+        input_div = editable_divs[0]
+
+        # Scroll đến input_div và click để focus
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", input_div
+        )
+        time.sleep(0.5)
+        input_div.click()
+        time.sleep(0.5)  # đợi focus ổn định
+
+        # 2. Xóa hết nội dung trước (nếu cần) bằng pyautogui
+        pyautogui.hotkey(
+            "ctrl", "a"
+        )  # Chọn tất cả (Windows/Linux). Trên macOS thay bằng 'command'
+        time.sleep(0.2)
+        pyautogui.press("backspace")
+        time.sleep(0.2)
+
+        # Gõ nội dung comment mới
+        pyautogui.typewrite(
+            comment_text, interval=0.05
+        )  # khoảng delay giữa các ký tự để giống người gõ
+
+        # 3. Tìm nút Đăng
+        post_buttons = driver.find_elements(
+            By.CSS_SELECTOR, "div[data-e2e='comment-post']"
+        )
+        if not post_buttons:
+            print("❌ Không tìm thấy nút Đăng.")
+        post_button = post_buttons[0]
+
+        # 4. Chờ nút Đăng enabled (aria-disabled="false")
+        timeout = 5  # giây
+        poll_interval = 0.5
+        elapsed = 0
+        while elapsed < timeout:
+            aria_disabled = post_button.get_attribute("aria-disabled")
+            if aria_disabled == "false":
+                # Scroll và click nút Đăng
+                driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", post_button
+                )
+                time.sleep(0.3)
+                post_button.click()
+                print("✓ Đã gửi bình luận.")
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+        print("⚠ Nút Đăng không được bật trong thời gian chờ.")
+    except Exception as e:
+        print("    ❌ Lỗi khi tìm/nhấn nút Next (Chuyển video):", e)
+
+
 def main():
     # Khởi động WebDriver với cấu hình tối ưu
     driver = setup_driver()
@@ -171,11 +301,22 @@ def main():
     try:
         # Vòng lặp vô hạn: Like rồi Next liên tục
         while True:
+            # ========== Tìm và click nút "Follow" (Theo dõi)==========
+            click_all_follow_buttons(driver)
+
             # ========== Tìm và click nút "Like" (Tym) ==========
             like_button(driver)
 
-            # ========== Tìm và click nút "Next" (Chuyển video) ==========
-            # next_button(driver, wait)
+            # ========== Tìm và click nút "Undefined" (Mục yêu thích) ==========
+            click_undefined_button(driver)
+
+            # ========== Tìm và nhập text nhấn nút gửi bình luận ==========
+            type_comment_with_pyautogui_and_post(driver)
+
+            # ========== Tìm và click nút "Comment Like" (Tym) ==========
+            click_all_comment_like_icons(driver)
+
+            # ========== Dùng pyautogui xử lý phím mũi tên xuống để chyển tiếp video ==========
             press_arrow_down()
     except KeyboardInterrupt:
         # Khi người dùng nhấn Ctrl+C, sẽ bắt vào đây để dọn dẹp
