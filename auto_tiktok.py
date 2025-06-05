@@ -16,7 +16,8 @@ CHROME_DRIVER_PATH = r"chromedriver.exe"
 # Nếu muốn chạy với profile Chrome đã login sẵn, gán USER_DATA_DIR.
 # Nếu không, đặt USER_DATA_DIR = None hoặc comment dòng dưới.
 # Ví dụ Windows: r"C:\Users\YourName\AppData\Local\Google\Chrome\User Data"
-USER_DATA_DIR = r"C:\chrome-profile\tiktok-persistent"
+# USER_DATA_DIR = r"C:\chrome-profile\tiktok-persistent"
+USER_DATA_DIR = r"C:\chrome-profile\tiktok-nhanha1007"
 
 # Đường dẫn TikTok đã login
 TIKTOK_URL = "https://www.tiktok.com/"
@@ -178,7 +179,7 @@ def click_all_comment_like_icons(driver):
         for idx, icon in enumerate(like_icons, start=1):
             try:
                 # CLick đến nút thích bình luận thứ 8 thì dừng lại
-                if idx == 8:
+                if idx == 5:
                     break
 
                 # Scroll icon vào giữa màn hình để chắc chắn nó hiển thị
@@ -202,6 +203,8 @@ def press_arrow_down():
     time.sleep(2.5)
     # -------------------------------------
     pyautogui.keyDown("down")  # Nhấn giữ
+    pyautogui.keyDown("down")  # Nhấn giữ
+    pyautogui.keyUp('down')   # Thả phím
     # -------------------------------------
 
     # -------------------------------------
@@ -242,18 +245,26 @@ def type_comment_with_pyautogui_and_post(driver, comment_text="Great video!"):
         input_div.click()
         time.sleep(0.5)  # đợi focus ổn định
 
-        # 2. Xóa hết nội dung trước (nếu cần) bằng pyautogui
-        pyautogui.hotkey(
-            "ctrl", "a"
-        )  # Chọn tất cả (Windows/Linux). Trên macOS thay bằng 'command'
-        time.sleep(0.2)
-        pyautogui.press("backspace")
-        time.sleep(0.2)
+        #------------------------------
+        # 2. Xóa nội dung cũ (nếu có)
+        input_div.send_keys(Keys.CONTROL, 'a')  # Ctrl+A chọn tất cả (macOS dùng Keys.COMMAND)
+        time.sleep(0.1)
+        input_div.send_keys(Keys.BACKSPACE)     # Xóa
 
-        # Gõ nội dung comment mới
-        pyautogui.typewrite(
-            comment_text, interval=0.05
-        )  # khoảng delay giữa các ký tự để giống người gõ
+        # 3. Gửi comment mới bằng send_keys
+        input_div.send_keys(comment_text)
+        time.sleep(0.5)
+        #------------------------------
+        #------------------------------
+        # 2. Xóa nội dung cũ (nếu có)
+        input_div.send_keys(Keys.CONTROL, 'a')  # Ctrl+A chọn tất cả (macOS dùng Keys.COMMAND)
+        time.sleep(0.1)
+        input_div.send_keys(Keys.BACKSPACE)     # Xóa
+
+        # 3. Gửi comment mới bằng send_keys
+        input_div.send_keys(comment_text)
+        time.sleep(0.5)
+        #------------------------------
 
         # 3. Tìm nút Đăng
         post_buttons = driver.find_elements(
@@ -294,13 +305,16 @@ def main():
     # Điều hướng tới TikTok
     driver.get(TIKTOK_URL_EXPLORE)
 
-    # Đợi tạm 3s để đảm bảo JS, CSS, video, popup load xong
-    time.sleep(3)
+    # Đợi tạm 5s để đảm bảo JS, CSS, video, popup load xong
+    time.sleep(5)
 
     print("▶ Bắt đầu vòng lặp tự động Like + Next. Nhấn Ctrl+C để dừng.")
     try:
         # Vòng lặp vô hạn: Like rồi Next liên tục
         while True:
+            # ========== Dùng pyautogui xử lý phím mũi tên xuống để chyển tiếp video ==========
+            press_arrow_down()
+
             # ========== Tìm và click nút "Follow" (Theo dõi)==========
             click_all_follow_buttons(driver)
 
