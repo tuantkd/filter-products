@@ -1,8 +1,10 @@
 import time
+import pyautogui
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
@@ -32,6 +34,11 @@ def setup_driver():
 
 
 def close_modal_comment(driver):
+    # ================== 3. CUỘN XUỐNG LOAD BÀI MỚI ==================
+    print("[INFO] Cuộn xuống để load thêm bài.")
+    driver.execute_script("window.scrollBy(0, 900);")
+    time.sleep(1)
+
     # Sau khi comment xong, tìm nút Đóng và click
     try:
         # Nút Đóng có aria-label="Đóng", nên ta đợi nó xuất hiện và có thể click
@@ -39,37 +46,44 @@ def close_modal_comment(driver):
             By.XPATH,
             "//div[@aria-label='Đóng' and @role='button']",
         )
-        if len(close_btns) > 0:
-            driver.execute_script(
-                "arguments[0].scrollIntoView({block: 'center'});",
-                close_btns[0],
-            )
-            time.sleep(1)
-            close_btns[0].click()
-            print("    ✅ Đã click nút Đóng để tắt popup bình luận.")
-            time.sleep(1)
-    except:
-        print("    ❌ Không tìm thấy hoặc không click được nút Đóng.")
+        print(f"    ✅ Đã tìm được {len(close_btns)} nút Đóng")
+    except Exception as e:
+        print(f"    ❌ Không tìm thấy được nút Đóng: {e}")
+
+    if len(close_btns) > 0:
+        for idx, btn in enumerate(close_btns, start=1):
+            try:
+                driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});",
+                    btn,
+                )
+                time.sleep(0.3)
+                btn.click()
+                print(f"    ✅ Đã click nút Đóng để tắt popup bình luận {idx}")
+                time.sleep(0.5)
+            except Exception as e:
+                print(f"    ❌ Lỗi xử lý click nút Đóng: {e}")
 
 
 def like_button(driver):
     try:
         # Lấy danh sách tất cả <div aria-label='Thích'> đang hiển thị
         like_buttons = driver.find_elements(By.XPATH, "//div[@aria-label='Thích']")
-        print(f"[INFO] Tìm được {len(like_buttons)} nút Thích trong viewport.")
-        for idx, btn in enumerate(like_buttons, start=1):
-            try:
-                driver.execute_script(
-                    "arguments[0].scrollIntoView({block: 'center'});", btn
-                )
-                time.sleep(0.3)
-                btn.click()
-                print(f"  {idx}. ✅ Đã click Thích")
-                time.sleep(0.5)
-            except Exception as e:
-                print(f"  {idx}. ❌ Lỗi khi click Thích: {e}")
-    except:
-        print("❌ Không tìm được nút Thích trong viewport.")
+        print(f"    ✅ Tìm được {len(like_buttons)} nút Thích trong viewport.")
+    except Exception as e:
+        print(f"    ❌ Không tìm được nút Thích trong viewport: {e}")
+
+    for idx, btn in enumerate(like_buttons, start=1):
+        try:
+            driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", btn
+            )
+            time.sleep(0.3)
+            btn.click()
+            print(f"  {idx}. ✅ Đã click Thích")
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"  {idx}. ❌ Lỗi khi click Thích: {e}")
 
 
 def comment_box(driver):
@@ -79,49 +93,71 @@ def comment_box(driver):
             By.XPATH,
             "//div[@contenteditable='true' and contains(@aria-label, 'Bình luận dưới tên')]",
         )
-        if len(comment_boxs) > 0:
-            print(f"    ✅ Đã tìm thấy ô comment")
-            for comment in comment_boxs:
-                try:
-                    # --- Đưa ô nhập vào giữa viewport để Selenium click chính xác ---
-                    driver.execute_script(
-                        "arguments[0].scrollIntoView({block: 'center'});",
-                        comment,
-                    )
+        print(f"    ✅ Đã tìm thấy {len(comment_boxs)} ô comment")
+    except Exception as e:
+        print(f"    ❌ Không tìm được ô nhập bình luận: {e}")
 
-                    # --- Click để focus vào ô nhập và gõ chữ ---
-                    comment.click()
-                    time.sleep(0.5)  # chờ focus thực sự vào ô
+    for idx, comment in enumerate(comment_boxs, start=1):
+        try:
+            # --- Đưa ô nhập vào giữa viewport để Selenium click chính xác ---
+            driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});",
+                comment,
+            )
 
-                    # --- Xóa nội dung cũ (nếu có) và gõ mới ---
-                    # Thông thường <div contenteditable> đã trống, nhưng nếu có sẵn <p><br> hoặc text cũ, ta có thể clear:
-                    try:
-                        comment.clear()
-                        print("    ✅ Đã clear ô comment cũ")
-                    except:
-                        print(
-                            "    ❌ Clear ô comment không thành công (nếu ô trống vẫn ok)"
-                        )
+            # --- Click để focus vào ô nhập và gõ chữ ---
+            comment.click()
+            time.sleep(0.5)  # chờ focus thực sự vào ô
 
-                    # --- Dùng send_keys để gõ nội dung mới ---
-                    comment.send_keys("Mua ủnng hộ mình nha https://vt.tiktok.com/ZSkFeBKsP/")
-                    print("    ✅ Đã nhập nội dung text")
-                    time.sleep(0.3)
+            # --- Xóa nội dung cũ (nếu có) và gõ mới ---
+            # Thông thường <div contenteditable> đã trống, nhưng nếu có sẵn <p><br> hoặc text cũ, ta có thể clear:
+            comment.clear()
+            print(f"  {idx}. ✅ Đã clear ô comment cũ")
 
-                    # --- Nhấn Enter để gửi bình luận ---
-                    comment.send_keys(Keys.ENTER)
-                    time.sleep(8)
+            # --- Dùng send_keys để gõ nội dung mới ---
+            comment.send_keys("Xin chào!!!")
+            print(f"  {idx}. ✅ Đã nhập nội dung text")
+            time.sleep(0.3)
 
-                    # --- Sau khi comment xong, tìm và click nút Đóng ---
-                    # Nút Đóng có aria-label="Đóng", nên ta đợi nó xuất hiện và có thể click
-                    close_modal_comment(driver)
-                    break
+            # --- Nhấn Enter để gửi bình luận ---
+            comment.send_keys(Keys.ENTER)
+            time.sleep(4)
 
-                except Exception as e:
-                    print(f"    ❌ Không tìm thấy ô comment")
-                    continue  # bỏ qua phần nhập, chuyển bài tiếp theo
-    except:
-        print("❌ Không tìm được ô nhập bình luận.")
+            break
+        except Exception as e:
+            print(f"    ❌ Không tìm thấy ô comment: {e}")
+
+
+def comment_button(driver):
+    try:
+        # Lấy lại danh sách mỗi lần vì DOM có thể thay đổi sau khi đã click Thích
+        comment_buttons = driver.find_elements(
+            By.XPATH, "//div[@aria-label='Viết bình luận']"
+        )
+        print(f"   ✅ Tìm được {len(comment_buttons)} nút Bình luận trong viewport.")
+    except Exception as e:
+        print(f"   ❌ Lỗi không tìm thấy nút Bình luận: {e}")
+
+    for idx, btn in enumerate(comment_buttons, start=1):
+        try:
+            # --- Scroll sao cho nút nằm giữa màn hình ---
+            driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", btn
+            )
+            time.sleep(0.3)
+            btn.click()
+            print(f"  {idx}. ✅ Đã click Bình luận nút")
+            time.sleep(0.5)
+
+            # --- Gọi hàm bình luận nhập ô textbox ---
+            comment_box(driver)
+
+            # --- Gọi hàm đóng popup bình luận ---
+            close_modal_comment(driver)
+
+            break
+        except Exception as e:
+            print(f"  {idx}. ❌ Lỗi khi xử lý nút Bình luận: {e}")
 
 
 def main_loop():
@@ -140,45 +176,10 @@ def main_loop():
             like_button(driver)
 
             # ================== 2. NHẤP TẤT CẢ CÁC NÚT "Bình luận" ==================
-            try:
-                # Lấy lại danh sách mỗi lần vì DOM có thể thay đổi sau khi đã click Thích
-                comment_buttons = driver.find_elements(
-                    By.XPATH, "//div[@aria-label='Viết bình luận']"
-                )
-                print(
-                    f"[INFO] Tìm được {len(comment_buttons)} nút Bình luận trong viewport."
-                )
-                if len(comment_buttons) > 0:
-                    for idx, btn in enumerate(comment_buttons, start=1):
-                        try:
-                            # --- Scroll sao cho nút nằm giữa màn hình ---
-                            driver.execute_script(
-                                "arguments[0].scrollIntoView({block: 'center'});", btn
-                            )
-                            time.sleep(1)
-                            btn.click()
-                            print("  + Đã click Bình luận nút")
-                            time.sleep(1)
-
-                            # --- Gọi hàm bình luận nhập ô textbox ---
-                            comment_box(driver)
-
-                            # --- Gọi hàm đóng popup bình luận ---
-                            close_modal_comment(driver)
-                        except Exception as e:
-                            print(f"  {idx}. ❌ Lỗi khi xử lý Bình luận: {e}")
-
-            except Exception as e:
-                print(f"  {idx}. ❌ Lỗi không tìm thấy nút Bình luận: {e}")
+            comment_button(driver)
 
             # --- Gọi hàm đóng popup bình luận ---
             close_modal_comment(driver)
-
-            # ================== 3. CUỘN XUỐNG LOAD BÀI MỚI ==================
-            print("[INFO] Cuộn xuống để load thêm bài.")
-            driver.execute_script("window.scrollBy(0, 800);")
-            time.sleep(2)
-
     except KeyboardInterrupt:
         print("\n[INFO] Người dùng đã dừng chương trình.")
     finally:
