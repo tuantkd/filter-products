@@ -20,8 +20,12 @@ flask run
 
 2. **Chạy Chrome với profile riêng**  
    Mở Command Prompt/PowerShell và chạy lệnh:
-   ```cmd
+   ```
+   CMD:
    "C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir="C:\chrome-profile\fb-persistent"
+
+   Powershell:
+   & "C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir="C:\chrome-profile\tiktok-nhanha1007"
    ```
    *(Lưu ý: Đảm bảo đường dẫn Chrome đúng với phiên bản bạn cài đặt)*
 
